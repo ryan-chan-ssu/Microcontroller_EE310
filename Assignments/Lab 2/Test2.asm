@@ -1,0 +1,4 @@
+	MOVLW 0xC9
+	MOVWF 0x12
+	NOP
+	SLEEP
