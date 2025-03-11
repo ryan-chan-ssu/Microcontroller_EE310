@@ -8,7 +8,8 @@
 // OUTPUTS: PORTD.1 and PORTD.2 
 // INPUTS: refTemp and measTemp 
 // Versions:
-//  	V1.0: 3/8/25 - First version 
+//  	V1.0: 3/8/25 - First version
+//	V2.0: 3/10/25 - Updated version
 //-----------------------------
 
 ;---------------------
@@ -23,7 +24,7 @@
 ;The DEFINE directive is used to create macros or symbolic names for values.
 ;It is more flexible and can be used to define complex expressions or sequences of instructions.
 ;It is processed by the preprocessor before the assembly begins.
-#define  measuredTempInput 	-5 ; this is the input value
+#define  measuredTempInput 	15 ; this is the input value
 #define  refTempInput 		15 ; this is the input value
 
 ;---------------------
@@ -32,6 +33,7 @@
 #define SWITCH    LATD,2  
 #define LED0      PORTD,0
 #define LED1	  PORTD,1
+#define LED2	  PORTD,2
     
 ;---------------------
 ; Program Constants
@@ -62,11 +64,11 @@ measuredTemp_H   equ  0x72  ; Most significant digit of measuredTemp
     PSECT absdata,abs,ovrld ; Do not change
     
     ORG     0               ; Reset vector
-    GOTO    START
+    GOTO    _START
     
     ORG	    0x20	    ; Begin assembly
     
-START:    
+_START:    
     MOVLW   0
     MOVWF   TRISD,0	    ; Set PORTD to output
     MOVLW   refTempInput
@@ -74,63 +76,67 @@ START:
     MOVLW   measuredTempInput	
     MOVWF   measuredTemp    ; Store measuredTemp
 
-CHECK_NEGATIVE:
+_CHECK_NEGATIVE:
     BTFSC   measuredTemp, 7 ; Skip if bit 7 is 0 (measuredTemp is positive)
     NEGF    measuredTemp    ; If bit 7 is 1, perform two's complement negation
-    GOTO    COMPARE	
     
-COMPARE:
+_COMPARE:
     MOVF    measuredTemp, W ; Load measuredTemp into WREG
     CPFSEQ  refTemp	    ; Skip next if measuredTemp == refTemp
-    GOTO    CHECK_GREATER   ; Check if measuredTemp > refTemp
-    GOTO    LED_OFF	    ; if measuredTemp == refTemp
+    GOTO    _CHECK_GREATER  ; Check if measuredTemp > refTemp
+    GOTO    _TURN_OFF	    ; if measuredTemp == refTemp
    
-CHECK_GREATER:
+_CHECK_GREATER:
     CPFSLT  refTemp	    ; Skip next if measuredTemp > refTemp
-    GOTO    LED_COOL	    ; if measuredTemp < refTemp
-    GOTO    LED_HOT	    ; if measuredTemp > refTemp
+    GOTO    _TURN_HOT	    ; if measuredTemp < refTemp
+    GOTO    _TURN_COOL	    ; if measuredTemp > refTemp
     
-LED_OFF:    
+_TURN_OFF:    
     MOVLW   0x00	    ; Set contReg = 0
     MOVWF   contReg
-    BCF	    PORTD,1	    ; Turn off heating
-    BCF	    PORTD,2	    ; Turn off cooling
-    GOTO    HEX2DEC
+    MOVWF   LATD	    ; Set PORTD as 0000
+    ;BCF    PORTD,1	    ; Turn off heating
+    ;BCF    PORTD,2	    ; Turn off cooling
+    GOTO    _HEX2DEC
     
-LED_HOT:    
-    MOVLW   0x02            ; Set contReg = 2
+_TURN_HOT:    
+    MOVLW   0x01            ; Set contReg = 1
     MOVWF   contReg
-    BSF	    PORTD,1	    ; Turn on heating
-    BCF	    PORTD,2	    ; Turn off cooling
-    GOTO    HEX2DEC
+    MOVLW   0x02
+    MOVWF   LATD	    ; Set PORTD as 0010
+    ;BSF    PORTD,1	    ; Turn on heating
+    ;BCF    PORTD,2	    ; Turn off cooling
+    GOTO    _HEX2DEC
     
-LED_COOL:
-    MOVLW   0x01            ; Set contReg = 1 
+_TURN_COOL:
+    MOVLW   0x02            ; Set contReg = 2 
     MOVWF   contReg
-    BCF	    PORTD,1	    ; Turn off heating
-    BSF	    PORTD,2	    ; Turn on cooling
-    GOTO    HEX2DEC
+    MOVLW   0x04
+    MOVWF   LATD	    ; Set PORTD as 0100
+    ;BCF    PORTD,1	    ; Turn off heating
+    ;BSF    PORTD,2	    ; Turn on cooling
+    GOTO    _HEX2DEC
     
-HEX2DEC:
+_HEX2DEC:
     CLRF    refTemp_L
     CLRF    refTemp_M
     CLRF    refTemp_H
     MOVLW   refTempInput
     MOVWF   REG10	    ; Store numerator
     MOVLW   100   
-D1:			    ; D1 converts hundreds to DEC
+_D1:			    ; D1 converts hundreds to DEC
     INCF    REG11, F	    
     SUBWF   REG10, F
-    BC      D1
+    BC      _D1
     DECF    REG11, F
     ADDWF   REG10, F
     MOVFF   REG11, refTemp_L
     CLRF    REG11
     MOVLW   10
-D2:			    ; D2 converts tens to DEC
+_D2:			    ; D2 converts tens to DEC
     INCF    REG11, F	    
     SUBWF   REG10, F
-    BC      D2
+    BC      _D2
     DECF    REG11, F
     ADDWF   REG10, F
     MOVFF   REG11, refTemp_M
@@ -140,31 +146,31 @@ D2:			    ; D2 converts tens to DEC
     CLRF    measuredTemp_L
     CLRF    measuredTemp_M
     CLRF    measuredTemp_H
-    MOVLW   measuredTempInput
+    MOVF    measuredTemp, W
     MOVWF   REG10	    ; Store numerator
     MOVLW   100   
-D3:			    ; D3 converts hundreds to DEC
+_D3:			    ; D3 converts hundreds to DEC
     INCF    REG11, F	    
     SUBWF   REG10, F
-    BC      D3
+    BC      _D3
     DECF    REG11, F
     ADDWF   REG10, F
     MOVFF   REG11, measuredTemp_L
     CLRF    REG11
     MOVLW   10
-D4:			    ; D4 converts tens to DEC
+_D4:			    ; D4 converts tens to DEC
     INCF    REG11, F	    
     SUBWF   REG10, F
-    BC      D4
+    BC      _D4
     DECF    REG11, F
     ADDWF   REG10, F
     MOVFF   REG11, measuredTemp_M
     CLRF    REG11
     MOVFF   REG10, measuredTemp_H
-    GOTO    END_PROGRAM
-    
-END_PROGRAM:
     MOVLW   measuredTempInput	
     MOVWF   measuredTemp    ; Reset measuredTemp
-    GOTO    END_PROGRAM	    ; Stay forever
+    GOTO    _END_PROGRAM
+    
+_END_PROGRAM:
+    GOTO    _END_PROGRAM    ; Stay forever
     END
