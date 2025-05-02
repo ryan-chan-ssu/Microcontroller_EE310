@@ -13,9 +13,6 @@
 // - lcd.h – LCD macros and function declarations
 // - pwm.h – PWM initialization and control
 //
-// Compiler: XC8 v3.00
-// Author: Ryan Chan
-//
 // Inputs:
 // - Light sensor (photoresistor) on RA0 (analog input)
 // - PWM control button on RB0
@@ -34,7 +31,9 @@
 // - LEDs for visual feedback
 // - External pull-down resistors for button inputs
 //
-// Version: 2.0
+// Compiler: XC8 v3.00
+// Author: Ryan Chan
+// Code Version: 2.0
 
 
 #include <xc.h>
