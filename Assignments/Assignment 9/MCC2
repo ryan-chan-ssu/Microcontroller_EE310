@@ -1,0 +1,38 @@
+#include "mcc_generated_files/system/system.h"
+#include <stdio.h>
+#include <time.h>
+
+/*
+    Main application
+*/
+
+int main(void)
+{
+    SYSTEM_Initialize();
+    UART2_Initialize();
+    srand(time(NULL));
+
+    while (1)
+    {
+        if (UART2_IsRxReady()) // if data is available
+        {
+            char received = UART2_Read(); // read character
+            //printf("Received: %c\r\n", received); // optional debug
+            if (received == '\r' || received == '\n') {
+                continue;
+            }
+
+            if (received == 'A') {
+                printf("Received: A\r\n");
+                LATBbits.LATB1 = 1; // Turn ON LED
+            } else {
+                printf("Invalid input: %c\r\n", received);
+                LATBbits.LATB1 = 0; // Turn OFF LED
+            }
+        }   
+
+        // Optional: transmit random number every second
+        // printf("Random: %d\r\n", random_number(1,100));
+        __delay_ms(1000);
+    }
+}
