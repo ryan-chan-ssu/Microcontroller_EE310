@@ -1,0 +1,39 @@
+#include "mcc_generated_files/system/system.h"
+#include <stdio.h>
+#include <time.h>
+
+/*
+    Main application
+*/
+int random_number(int min_num, int max_num)
+{
+    int result = 0, low_num = 0, hi_num = 0;
+
+    if (min_num < max_num)
+    {
+        low_num = min_num;
+        hi_num = max_num + 1;  // include max_num in output
+    } 
+    else {
+        low_num = max_num + 1; // include max_num in output
+        hi_num = min_num;
+    }
+
+    result = (rand() % (hi_num - low_num)) + low_num;
+    return result;
+}
+
+int main(void)
+{
+    SYSTEM_Initialize();
+    UART2_Initialize();
+    srand(time(NULL));
+
+    while(1)
+    {
+        printf("%d\r\n", random_number(100,1000));
+        __delay_ms(500);
+        LATBbits.LATB1 ^= 1; // RB1
+    }
+}
+    
